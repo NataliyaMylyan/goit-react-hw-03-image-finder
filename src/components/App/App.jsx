@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Searchbar from "../Searchbar/Searchbar.jsx";
-import api from "../API/API.js";
+import api from "../../api/api.js";
 import ImageGallery from "../ImageGallery/ImageGallery.jsx";
 import Loader from "../Loader/Loader.jsx";
 import Button from "../Button/Button.jsx";
@@ -11,7 +11,7 @@ import s from "./App.module.css";
 
 class App extends Component {
   state = {
-    curretPage: 1,
+    currentPage: 1,
     gallery: [],
     searchQuery: "",
     loading: false,
@@ -19,32 +19,31 @@ class App extends Component {
     largeImageUrl: "",
   };
 
-  componentDidUpdate(prevProps, prevState) {
+  async componentDidUpdate(prevProps, prevState) {
     if (prevState.searchQuery !== this.state.searchQuery) {
-      this.fetchImagesGallery();
+      await this.fetchImagesGallery();
     }
   }
 
-  fetchImagesGallery = () => {
+  fetchImagesGallery = async () => {
     const { currentPage, searchQuery } = this.state;
     this.setState({ loading: true });
 
-    api
-      .fetchImages(searchQuery, currentPage)
-      .then((data) =>
-        this.setState((prevState) => ({
-          gallery: [...prevState.gallery, ...data.hits],
-          currentPage: prevState.currentPage + 1,
-        }))
-      )
-      .then(() => {
-        window.scrollTo({
-          top: document.documentElement.scrollHeight,
-          behavior: "smooth",
-        });
-      })
-      .catch((error) => this.setState({ error }))
-      .finally(() => this.setState({ loading: false }));
+    try {
+      const { hits } = await api.fetchImages(searchQuery, currentPage);
+      this.setState((prevState) => ({
+        gallery: [...prevState.gallery, ...hits],
+        currentPage: prevState.currentPage + 1,
+      }));
+      window.scrollTo({
+        top: document.documentElement.scrollHeight,
+        behavior: "smooth",
+      });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      this.setState({ loading: false });
+    }
   };
 
   handleQueryChange = (query) => {
